@@ -740,7 +740,7 @@
           <div class="stats-section">
             <div class="stats-section-title">📅 本周统计</div>
             <div class="stats-grid">
-              <div class="stat-card"><div class="sc-icon">📚</div><div class="sc-val" id="statWeekStudy">0</div><div class="sc-lbl">学习时长(天)</div></div>
+              <div class="stat-card"><div class="sc-icon">📚</div><div class="sc-val" id="statWeekStudy">0</div><div class="sc-lbl">学习时长(小时)</div></div>
               <div class="stat-card"><div class="sc-icon">🚪</div><div class="sc-val" id="statWeekVisit">0</div><div class="sc-lbl">拜访客户数</div></div>
               <div class="stat-card"><div class="sc-icon">🏪</div><div class="sc-val" id="statWeekArrived">0</div><div class="sc-lbl">到店客户数</div></div>
               <div class="stat-card"><div class="sc-icon">✨</div><div class="sc-val" id="statWeekNew">0</div><div class="sc-lbl">新增客户数</div></div>
@@ -750,7 +750,7 @@
           <div class="stats-section">
             <div class="stats-section-title">📆 本月统计</div>
             <div class="stats-grid">
-              <div class="stat-card"><div class="sc-icon">📚</div><div class="sc-val" id="statMonthStudy">0</div><div class="sc-lbl">学习时长(天)</div></div>
+              <div class="stat-card"><div class="sc-icon">📚</div><div class="sc-val" id="statMonthStudy">0</div><div class="sc-lbl">学习时长(小时)</div></div>
               <div class="stat-card"><div class="sc-icon">🚪</div><div class="sc-val" id="statMonthVisit">0</div><div class="sc-lbl">拜访客户数</div></div>
               <div class="stat-card"><div class="sc-icon">🏪</div><div class="sc-val" id="statMonthArrived">0</div><div class="sc-lbl">到店客户数</div></div>
               <div class="stat-card"><div class="sc-icon">✨</div><div class="sc-val" id="statMonthNew">0</div><div class="sc-lbl">新增客户数</div></div>
@@ -808,7 +808,7 @@
           <div class="card-header"><span class="icon">📅</span><span class="title">本周总结</span><span class="extra" id="weeklySummaryWeek"></span></div>
           <div class="summary-counters" style="margin-bottom:12px;">
             <div class="s-counter"><div class="val" style="color:#fbbf24" id="weekSumVisit">0</div><div class="lbl">拜访客户数</div></div>
-            <div class="s-counter"><div class="val" style="color:#a855f7" id="weekSumStudy">0</div><div class="lbl">学习时长(天)</div></div>
+            <div class="s-counter"><div class="val" style="color:#a855f7" id="weekSumStudy">0</div><div class="lbl">学习时长(小时)</div></div>
             <div class="s-counter"><div class="val" style="color:#4ade80" id="weekSumArrived">0</div><div class="lbl">到店客户数</div></div>
           </div>
           <div class="summary-counters" style="margin-bottom:12px;">
@@ -821,7 +821,7 @@
           <div class="card-header"><span class="icon">📆</span><span class="title">本月总结</span><span class="extra" id="monthlySummaryMonth"></span></div>
           <div class="summary-counters" style="margin-bottom:12px;">
             <div class="s-counter"><div class="val" style="color:#fbbf24" id="monthSumVisit">0</div><div class="lbl">拜访客户数</div></div>
-            <div class="s-counter"><div class="val" style="color:#a855f7" id="monthSumStudy">0</div><div class="lbl">学习时长(天)</div></div>
+            <div class="s-counter"><div class="val" style="color:#a855f7" id="monthSumStudy">0</div><div class="lbl">学习时长(小时)</div></div>
             <div class="s-counter"><div class="val" style="color:#4ade80" id="monthSumArrived">0</div><div class="lbl">到店客户数</div></div>
           </div>
           <div class="summary-counters" style="margin-bottom:12px;">
@@ -949,6 +949,10 @@
       <button data-ptype="study">学习任务</button>
       <button data-ptype="other">其他</button>
     </div>
+    <div class="field" id="pStudyHoursField" style="margin-top:10px;display:none;">
+      <label>学习时长（小时）</label>
+      <input type="number" id="pStudyHours" placeholder="如：2" min="0.5" max="24" step="0.5" value="1">
+    </div>
     <div class="field" style="margin-top:10px;"><label>提醒时间</label><input type="time" id="pRemind" value=""></div>
     <input type="hidden" id="pId" value="">
     <input type="hidden" id="pType" value="visit">
@@ -965,8 +969,8 @@
       <input type="number" id="goalVisitInput" placeholder="15" min="1" max="999" value="15">
     </div>
     <div class="field" id="goalStudyField" style="display:none;">
-      <label>学习时间目标（天）</label>
-      <input type="number" id="goalStudyInput" placeholder="60" min="1" max="9999" value="60">
+      <label>学习时间目标（小时/天）</label>
+      <input type="number" id="goalStudyInput" placeholder="2" min="0.5" max="24" step="0.5" value="2">
     </div>
     <div class="modal-btns"><button class="btn btn-outline" onclick="closeModal('goalModal')">取消</button><button class="btn btn-primary" onclick="saveGoal()">保存</button></div>
   </div>
@@ -1027,7 +1031,7 @@ let editingGoalType='';
 function loadState(){
   try{const raw=localStorage.getItem(STORE_KEY);if(raw){
     const s=JSON.parse(raw);
-    if(!s.planGoals) s.planGoals={visitGoal:15,studyGoal:1,date:''};
+    if(!s.planGoals) s.planGoals={visitGoal:15,studyGoal:2,date:''};
     if(!s.weeklySummary) s.weeklySummary={};
     if(!s.monthlySummary) s.monthlySummary={};
     if(!s.noteCategories) s.noteCategories=['product','skill','health','company','industry','organs','ttby'];
@@ -1036,7 +1040,7 @@ function loadState(){
   return {
     clients:[],plans:[],summaries:[],notes:[],
     finance:[],studyEvents:[],planDate:'',
-    planGoals:{visitGoal:15,studyGoal:1,date:''},
+    planGoals:{visitGoal:15,studyGoal:2,date:''},
     weeklySummary:{},monthlySummary:{},
     noteCategories:['product','skill','health','company','industry','organs','ttby']
   };
@@ -1099,7 +1103,7 @@ function cloudDownload(){
       const cloudData=JSON.parse(decodeURIComponent(escape(atob(data.content))));
       state=cloudData;
       /* 补全缺失字段 */
-      if(!state.planGoals)state.planGoals={visitGoal:15,studyGoal:1,date:''};
+      if(!state.planGoals)state.planGoals={visitGoal:15,studyGoal:2,date:''};
       if(!state.weeklySummary)state.weeklySummary={};
       if(!state.monthlySummary)state.monthlySummary={};
       if(!state.noteCategories)state.noteCategories=['product','skill','health','company','industry','organs','ttby'];
@@ -1116,7 +1120,7 @@ function cloudDownload(){
 function checkPlanGoalsReset(){
   const td=today();
   if(!state.planGoals || state.planGoals.date!==td){
-    if(!state.planGoals) state.planGoals={visitGoal:15,studyGoal:1,date:''};
+    if(!state.planGoals) state.planGoals={visitGoal:15,studyGoal:2,date:''};
     state.planGoals.date=td;
     saveState();
   }
@@ -1448,11 +1452,14 @@ function deleteClient(id){
 
 /* ==================== 每日计划 ==================== */
 function getTodayStudyMinutes(){
+  /* 从今日工作计划的学习任务中统计学习时长（小时） */
   const td=today();
   let total=0;
-  state.studyEvents.forEach(e=>{
-    if(e.date===td){
-      if(e.duration&&e.duration>0){total+=parseInt(e.duration);}
+  state.plans.forEach(p=>{
+    if(p.date===td&&p.type==='study'&&p.done){
+      const h=parseFloat(p.studyHours);
+      if(h&&h>0){total+=h;}
+      else{total+=1;}/* 没填时长默认1小时 */
     }
   });
   return total;
@@ -1473,7 +1480,7 @@ function renderPlans(){
   const td=today();if(state.planDate!==td){state.planDate=td;saveState();}
   const plans=state.plans.filter(p=>p.date===td);
   const vg=state.planGoals.visitGoal||15;
-  const sg=state.planGoals.studyGoal||60;
+  const sg=state.planGoals.studyGoal||2;
   const visitDone=getTodayVisitDone();
   const studyMin=getTodayStudyMinutes();
   const summaryDone=isTodaySummaryDone();
@@ -1517,7 +1524,7 @@ function renderPlans(){
 
   const studyDoneCount=studyPlans.filter(p=>p.done).length;
   const todayStudyMin=getTodayStudyMinutes();
-  document.getElementById('studyCount').textContent='今日学习'+todayStudyMin+'天 / 目标'+sg+'天';
+  document.getElementById('studyCount').textContent='今日学习'+todayStudyMin+'小时 / 目标'+sg+'小时';
   document.getElementById('studyBar').style.width=(sg>0?Math.min(100,Math.round(todayStudyMin/sg*100)):0)+'%';
   renderPlanList('studyList',studyPlans);
 
@@ -1553,6 +1560,8 @@ function openPlanModal(editId){
   document.getElementById('pType').value='visit';
   document.querySelectorAll('#planTypeSelect button').forEach(b=>b.classList.remove('active'));
   document.querySelector('#planTypeSelect button[data-ptype="visit"]').classList.add('active');
+  document.getElementById('pStudyHoursField').style.display='none';
+  document.getElementById('pStudyHours').value='1';
   if(editId){
     const p=state.plans.find(x=>x.id===editId);
     if(p){
@@ -1562,12 +1571,18 @@ function openPlanModal(editId){
       document.querySelectorAll('#planTypeSelect button').forEach(b=>b.classList.remove('active'));
       document.querySelector('#planTypeSelect button[data-ptype="'+(p.type||'visit')+'"]').classList.add('active');
       document.getElementById('planModalTitle').textContent='编辑计划';
+      if((p.type||'visit')==='study'){
+        document.getElementById('pStudyHoursField').style.display='block';
+        document.getElementById('pStudyHours').value=p.studyHours||'1';
+      }
     }
   }else{document.getElementById('planModalTitle').textContent='新增计划';}
   document.querySelectorAll('#planTypeSelect button').forEach(b=>{
     b.onclick=function(){
       document.querySelectorAll('#planTypeSelect button').forEach(x=>x.classList.remove('active'));
       this.classList.add('active');document.getElementById('pType').value=this.dataset.ptype;
+      /* 学习类型时显示时长输入框 */
+      document.getElementById('pStudyHoursField').style.display=this.dataset.ptype==='study'?'block':'none';
     };
   });
   m.classList.add('show');
@@ -1577,6 +1592,11 @@ function savePlan(){
   const editId=document.getElementById('pId').value,remind=document.getElementById('pRemind').value;
   const ptype=document.getElementById('pType').value;
   const d={id:editId||Date.now().toString(36)+Math.random().toString(36).slice(2,6),content:c,date:today(),type:ptype,remind:remind||null,done:false,createdAt:editId?undefined:now().toISOString(),updatedAt:now().toISOString()};
+  /* 学习任务保存时长 */
+  if(ptype==='study'){
+    const h=parseFloat(document.getElementById('pStudyHours').value);
+    d.studyHours=(h&&h>0)?h:1;
+  }
   if(editId){const i=state.plans.findIndex(p=>p.id===editId);if(i>=0){d.done=state.plans[i].done;d.createdAt=state.plans[i].createdAt;state.plans[i]=d;}}
   else state.plans.unshift(d);
   saveState();closeModal('planModal');renderPlans();toast(editId?'计划已更新':'计划已添加 ✓');
@@ -1596,7 +1616,7 @@ function editGoal(type){
     document.getElementById('goalVisitInput').value=state.planGoals.visitGoal||15;
   }else if(type==='study'){
     document.getElementById('goalModalTitle').textContent='编辑学习目标';
-    document.getElementById('goalStudyInput').value=state.planGoals.studyGoal||60;
+    document.getElementById('goalStudyInput').value=state.planGoals.studyGoal||2;
   }
   m.classList.add('show');
 }
@@ -1605,7 +1625,7 @@ function saveGoal(){
     const v=parseInt(document.getElementById('goalVisitInput').value);
     if(v>0){state.planGoals.visitGoal=v;saveState();closeModal('goalModal');renderPlans();toast('陌拜目标已更新');}
   }else if(editingGoalType==='study'){
-    const v=parseInt(document.getElementById('goalStudyInput').value);
+    const v=parseFloat(document.getElementById('goalStudyInput').value);
     if(v>0){state.planGoals.studyGoal=v;saveState();closeModal('goalModal');renderPlans();toast('学习目标已更新');}
   }else{closeModal('goalModal');}
 }
@@ -1702,29 +1722,17 @@ function getMonthRange(){
   return {start,end};
 }
 function getStudyMinutesInRange(start,end){
-  /* 统一转换为Date对象比较 */
+  /* 从工作计划的学习任务中统计学习时长（小时） */
   const s=(start instanceof Date)?start:new Date(start+'T00:00:00');
   const e=(end instanceof Date)?end:new Date(end+'T23:59:59');
   let total=0;
-  state.studyEvents.forEach(ev=>{
-    if(ev.date){
-      const ed=new Date(ev.date+'T12:00:00');
-      /* 检查开始日期是否在范围内 */
-      let inRange=ed>=s&&ed<=e;
-      /* 如果有结束日期，也检查结束日期是否在范围内 */
-      if(!inRange&&ev.endDate&&ev.endDate!==ev.date){
-        const ed2=new Date(ev.endDate+'T12:00:00');
-        inRange=ed2>=s&&ed2<=e;
-      }
-      /* 如果开始日期在范围前、结束日期在范围后（跨范围），也算 */
-      if(!inRange&&ev.endDate&&ev.endDate!==ev.date){
-        const ed2=new Date(ev.endDate+'T12:00:00');
-        if(ed<s&&ed2>e) inRange=true;
-      }
-      if(inRange){
-        /* duration是天数，没有填的话默认1天 */
-        const dur=ev.duration&&ev.duration>0?parseInt(ev.duration):1;
-        total+=dur;
+  state.plans.forEach(p=>{
+    if(p.type==='study'&&p.done&&p.date){
+      const pd=new Date(p.date+'T12:00:00');
+      if(pd>=s&&pd<=e){
+        const h=parseFloat(p.studyHours);
+        if(h&&h>0){total+=h;}
+        else{total+=1;}/* 没填时长默认1小时 */
       }
     }
   });
