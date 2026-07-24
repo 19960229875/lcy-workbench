@@ -57,6 +57,35 @@
     transition:all .3s;flex-shrink:0;
   }
   .refresh-btn:active{transform:rotate(180deg);background:rgba(99,102,241,0.2);}
+  .sync-btn{
+    width:32px;height:32px;border-radius:50%;border:none;
+    background:rgba(34,197,94,0.1);color:#22c55e;font-size:15px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:all .3s;flex-shrink:0;
+  }
+  .sync-btn:active{transform:scale(0.9);background:rgba(34,197,94,0.2);}
+  .sync-btn.download{background:rgba(59,130,246,0.1);color:#3b82f6;}
+  .sync-btn.download:active{background:rgba(59,130,246,0.2);}
+  /* 同步设置弹窗 */
+  .sync-modal{
+    position:fixed;top:0;left:0;width:100%;height:100%;z-index:1000;
+    background:rgba(0,0,0,0.4);display:none;align-items:center;justify-content:center;
+  }
+  .sync-modal.show{display:flex;}
+  .sync-box{
+    background:#fff;border-radius:16px;padding:20px;width:90%;max-width:360px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.15);
+  }
+  .sync-box h3{font-size:16px;margin-bottom:12px;text-align:center;}
+  .sync-box input{
+    width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;
+    font-size:13px;margin-bottom:10px;box-sizing:border-box;
+  }
+  .sync-box .sync-tip{font-size:11px;color:#999;margin-bottom:12px;line-height:1.5;}
+  .sync-box .sync-actions{display:flex;gap:10px;}
+  .sync-box .sync-actions button{flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;cursor:pointer;}
+  .sync-box .btn-save{background:#6366f1;color:#fff;}
+  .sync-box .btn-cancel{background:#f1f5f9;color:#666;}
   .topbar .top-date{
     font-size:12px;color:var(--text-dim);flex-shrink:0;
     text-align:right;line-height:1.4;
@@ -539,6 +568,8 @@
     <div class="avatar">燕</div>
     <div class="info"><div class="name">龙春燕</div><div class="company">和治友德 · 健康养生</div></div>
     <button class="refresh-btn" onclick="refreshAll()" title="刷新数据">🔄</button>
+    <button class="sync-btn" onclick="cloudUpload()" title="上传到云端">☁️⬆</button>
+    <button class="sync-btn download" onclick="cloudDownload()" title="从云端下载">☁️⬇</button>
     <div class="top-date">
       <div class="td-week" id="topbarWeekday">---</div>
       <div id="topbarDate">---</div>
@@ -836,6 +867,19 @@
   </div>
 </div>
 
+<!-- ====== 同步设置弹窗 ====== -->
+<div class="sync-modal" id="syncModal">
+  <div class="sync-box">
+    <h3>☁️ 设置云端同步</h3>
+    <input type="text" id="syncToken" placeholder="粘贴你的 GitHub Token" maxlength="80">
+    <div class="sync-tip">Token 用于云端存储数据，只存在本地浏览器。获取：github.com/settings/tokens/new（勾选 repo 权限）</div>
+    <div class="sync-actions">
+      <button class="btn-cancel" onclick="closeSyncModal()">取消</button>
+      <button class="btn-save" onclick="saveSyncConfig()">保存</button>
+    </div>
+  </div>
+</div>
+
 <!-- ====== 客户模态框 ====== -->
 <div class="modal-mask" id="clientModal">
   <div class="modal">
@@ -1000,6 +1044,73 @@ function loadState(){
 function saveState(){localStorage.setItem(STORE_KEY,JSON.stringify(state));}
 function today(){return new Date().toISOString().split('T')[0];}
 function now(){return new Date();}
+
+/* ==================== 云端同步 ==================== */
+const SYNC_REPO='19960229875/lcy-workbench';
+const SYNC_FILE='cloud-data.json';
+const SYNC_TOKEN_KEY='lcy_sync_token';
+function getSyncToken(){
+  const t=localStorage.getItem(SYNC_TOKEN_KEY);
+  if(!t){openSyncModal();return null;}
+  return t;
+}
+function openSyncModal(){document.getElementById('syncModal').classList.add('show');}
+function closeSyncModal(){document.getElementById('syncModal').classList.remove('show');}
+function saveSyncConfig(){
+  const t=document.getElementById('syncToken').value.trim();
+  if(!t){toast('请输入Token');return;}
+  localStorage.setItem(SYNC_TOKEN_KEY,t);
+  closeSyncModal();
+  toast('Token已保存 ✓');
+}
+/* 上传到云端 */
+function cloudUpload(){
+  const token=getSyncToken();if(!token)return;
+  toast('正在上传...');
+  /* 先获取现有文件的SHA（如果存在） */
+  fetch('https://api.github.com/repos/'+SYNC_REPO+'/contents/'+SYNC_FILE,{
+    headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json'}
+  }).then(r=>r.json()).then(data=>{
+    const sha=data&&data.sha?data.sha:null;
+    return pushToCloud(token,sha);
+  }).catch(()=>pushToCloud(token,null));
+}
+function pushToCloud(token,sha){
+  const content=btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+  const body={message:'云端同步上传 '+new Date().toLocaleString('zh-CN'),content:content};
+  if(sha)body.sha=sha;
+  fetch('https://api.github.com/repos/'+SYNC_REPO+'/contents/'+SYNC_FILE,{
+    method:'PUT',
+    headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  }).then(r=>r.json()).then(d=>{
+    if(d.content&&d.content.sha){toast('上传成功 ✓');}
+    else if(d.message){toast('上传失败: '+d.message);}
+  }).catch(()=>toast('上传失败，请检查网络'));
+}
+/* 从云端下载 */
+function cloudDownload(){
+  const token=getSyncToken();if(!token)return;
+  toast('正在下载...');
+  fetch('https://api.github.com/repos/'+SYNC_REPO+'/contents/'+SYNC_FILE,{
+    headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json'}
+  }).then(r=>r.json()).then(data=>{
+    if(data&&data.content){
+      const cloudData=JSON.parse(decodeURIComponent(escape(atob(data.content))));
+      state=cloudData;
+      /* 补全缺失字段 */
+      if(!state.planGoals)state.planGoals={visitGoal:15,studyGoal:1,date:''};
+      if(!state.weeklySummary)state.weeklySummary={};
+      if(!state.monthlySummary)state.monthlySummary={};
+      if(!state.noteCategories)state.noteCategories=['product','skill','health','company','industry','organs','ttby'];
+      saveState();
+      refreshAll();
+      toast('下载成功 ✓');
+    }else{
+      toast('云端暂无数据');
+    }
+  }).catch(()=>toast('下载失败，请检查网络'));
+}
 
 /* 每日重置目标日期 */
 function checkPlanGoalsReset(){
