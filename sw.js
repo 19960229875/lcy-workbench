@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lcy-workbench-v5';
+const CACHE_NAME = 'lcy-workbench-v6';
 const ASSETS = [
   './',
   './index.html',
