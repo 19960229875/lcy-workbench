@@ -1702,12 +1702,29 @@ function getMonthRange(){
   return {start,end};
 }
 function getStudyMinutesInRange(start,end){
+  /* 统一转换为Date对象比较 */
+  const s=(start instanceof Date)?start:new Date(start+'T00:00:00');
+  const e=(end instanceof Date)?end:new Date(end+'T23:59:59');
   let total=0;
-  state.studyEvents.forEach(e=>{
-    if(e.date){
-      const ed=new Date(e.date+'T23:59:59');
-      if(ed>=start&&ed<=end){
-        if(e.duration&&e.duration>0){total+=parseInt(e.duration);}
+  state.studyEvents.forEach(ev=>{
+    if(ev.date){
+      const ed=new Date(ev.date+'T12:00:00');
+      /* 检查开始日期是否在范围内 */
+      let inRange=ed>=s&&ed<=e;
+      /* 如果有结束日期，也检查结束日期是否在范围内 */
+      if(!inRange&&ev.endDate&&ev.endDate!==ev.date){
+        const ed2=new Date(ev.endDate+'T12:00:00');
+        inRange=ed2>=s&&ed2<=e;
+      }
+      /* 如果开始日期在范围前、结束日期在范围后（跨范围），也算 */
+      if(!inRange&&ev.endDate&&ev.endDate!==ev.date){
+        const ed2=new Date(ev.endDate+'T12:00:00');
+        if(ed<s&&ed2>e) inRange=true;
+      }
+      if(inRange){
+        /* duration是天数，没有填的话默认1天 */
+        const dur=ev.duration&&ev.duration>0?parseInt(ev.duration):1;
+        total+=dur;
       }
     }
   });
@@ -1928,13 +1945,11 @@ function renderSummary(){
 
   const monthKey=getMonthStart();
   const mr=getMonthRange();
-  const msStart=mr.start.toISOString().split('T')[0];
-  const msEnd=mr.end.toISOString().split('T')[0];
   document.getElementById('monthlySummaryMonth').textContent=monthKey.replace('-','年')+'月';
-  const monthVisit=getVisitCountInRange(msStart,msEnd);
-  const monthStudy=getStudyMinutesInRange(msStart,msEnd);
-  const monthArrived=getArrivedCountInRange(msStart,msEnd);
-  const monthMeeting=getMeetingCountInRange(msStart,msEnd);
+  const monthVisit=getVisitCountInRange(mr.start,mr.end);
+  const monthStudy=getStudyMinutesInRange(mr.start,mr.end);
+  const monthArrived=getArrivedCountInRange(mr.start,mr.end);
+  const monthMeeting=getMeetingCountInRange(mr.start,mr.end);
   document.getElementById('monthSumVisit').textContent=monthVisit;
   document.getElementById('monthSumStudy').textContent=monthStudy;
   document.getElementById('monthSumArrived').textContent=monthArrived;
@@ -1980,15 +1995,13 @@ function getMonthStart(){
 function saveMonthlySummary(){
   const monthKey=getMonthStart();
   const mr=getMonthRange();
-  const startStr=mr.start.toISOString().split('T')[0];
-  const endStr=mr.end.toISOString().split('T')[0];
   if(!state.monthlySummary) state.monthlySummary={};
   state.monthlySummary[monthKey]={
     monthKey,
-    visitCount:getVisitCountInRange(startStr,endStr),
-    studyMinutes:getStudyMinutesInRange(startStr,endStr),
-    arrivedCount:getArrivedCountInRange(startStr,endStr),
-    meetingCount:getMeetingCountInRange(startStr,endStr),
+    visitCount:getVisitCountInRange(mr.start,mr.end),
+    studyMinutes:getStudyMinutesInRange(mr.start,mr.end),
+    arrivedCount:getArrivedCountInRange(mr.start,mr.end),
+    meetingCount:getMeetingCountInRange(mr.start,mr.end),
     note:document.getElementById('monthSumNote').value.trim()
   };
   saveState();toast('月总结已保存 ✓');
