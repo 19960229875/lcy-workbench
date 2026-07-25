@@ -654,15 +654,18 @@
             <div class="gc-pct" id="goalSummaryPct">点击去写</div>
           </div>
         </div>
-        <!-- 陌拜客户区 -->
+        <!-- 陌拜客户区 - 计数器模式 -->
         <div class="plan-section">
           <div class="plan-section-header">
             <span class="ps-title">🚪 陌拜客户</span>
-            <span class="ps-count" id="visitCount">今日拜访0人</span>
+            <span class="ps-count" id="visitCount">今日拜访0人 / 目标15人</span>
           </div>
           <div class="plan-section-bar"><div class="fill visit" id="visitBar" style="width:0%"></div></div>
-          <div class="client-list" id="visitList"></div>
-          <button class="btn btn-sm btn-outline add-btn" onclick="openPlanModalWithType('visit')">+ 添加陌拜</button>
+          <div id="visitList"></div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="btn btn-primary" style="flex:1;font-size:16px;font-weight:600;" onclick="quickAddVisit()">+1 拜访了一个客户</button>
+            <button class="btn btn-sm btn-outline" onclick="openPlanModalWithType('visit')" style="width:auto;align-self:center;">+ 备注</button>
+          </div>
         </div>
         <!-- 意向客户区 -->
         <div class="plan-section">
@@ -1512,10 +1515,11 @@ function renderPlans(){
   const studyPlans=plans.filter(p=>p.type==='study');
   const otherPlans=plans.filter(p=>p.type==='other'||!p.type);
 
+  /* 陌拜区域 - 显示已拜访的客户列表（有备注的） */
   const visitDoneCount=visitPlans.filter(p=>p.done).length;
   document.getElementById('visitCount').textContent='今日拜访'+visitDoneCount+'人 / 目标'+vg+'人';
   document.getElementById('visitBar').style.width=(vg>0?Math.min(100,Math.round(visitDoneCount/vg*100)):0)+'%';
-  renderPlanList('visitList',visitPlans);
+  renderVisitList('visitList',visitPlans);
 
   const intentionDoneCount=intentionPlans.filter(p=>p.done).length;
   document.getElementById('intentionCount').textContent='今日拜访'+intentionDoneCount+'人';
@@ -1529,6 +1533,32 @@ function renderPlans(){
   renderPlanList('studyList',studyPlans);
 
   renderPlanList('otherList',otherPlans);
+}
+
+/* 陌拜列表渲染 - 显示有备注的客户 */
+function renderVisitList(containerId,plans){
+  const el=document.getElementById(containerId);
+  /* 只显示有备注内容的陌拜记录 */
+  const noted=plans.filter(p=>p.content&&p.content.trim());
+  if(noted.length===0){el.innerHTML='';return;}
+  const sorted=[...noted].sort((a,b)=>(a.done===b.done?0:a.done?1:-1));
+  el.innerHTML=sorted.map(p=>''
+    +'<div class="plan-item '+(p.done?'done ':'')+'type-visit">'
+      +'<div class="plan-check '+(p.done?'checked':'')+'" onclick="togglePlan(\''+p.id+'\')">'+(p.done?'♥':'')+'</div>'
+      +'<div class="plan-body"><div class="plan-text"><span class="plan-type-badge visit">陌拜</span>'+escHtml(p.content)+'</div>'
+        +'<div class="plan-time"><span>'+(p.createdAt?new Date(p.createdAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}):'')+'</span></div>'
+      +'</div>'
+      +'<button class="plan-del" onclick="event.stopPropagation();deletePlan(\''+p.id+'\')">×</button>'
+    +'</div>').join('');
+}
+/* 快速添加陌拜计数 */
+function quickAddVisit(){
+  const d={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),content:'',date:today(),type:'visit',remind:null,done:true,createdAt:now().toISOString(),updatedAt:now().toISOString()};
+  state.plans.unshift(d);
+  saveState();renderPlans();
+  const vg=state.planGoals.visitGoal||15;
+  const done=getTodayVisitDone();
+  toast('陌拜 +1，今日'+done+'/'+vg+'人 💪');
 }
 
 function renderPlanList(containerId,plans){
