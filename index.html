@@ -892,7 +892,7 @@
       <div class="field"><label>性别</label><select id="cGender"><option value="保密">保密</option><option value="男">男</option><option value="女">女</option></select></div>
     </div>
     <div class="field-row">
-      <div class="field"><label>年龄</label><input type="number" id="cAge" placeholder="年龄" min="1" max="120"></div>
+      <div class="field"><label>出生年月日</label><input type="date" id="cAge" placeholder="选择日期"></div>
       <div class="field"><label>月收入</label><input type="text" id="cIncome" placeholder="如：5000-8000" maxlength="30"></div>
     </div>
     <div class="field-row">
@@ -1020,6 +1020,18 @@
 
 <script>
 /* ==================== 数据存储 ==================== */
+/* 根据出生日期计算年龄 */
+function calcAge(birth){
+  if(!birth)return null;
+  const b=new Date(birth);
+  if(isNaN(b))return null;
+  const n=new Date();
+  let age=n.getFullYear()-b.getFullYear();
+  const m=n.getMonth()-b.getMonth();
+  if(m<0||(m===0&&n.getDate()<b.getDate()))age--;
+  return age>=0?age:null;
+}
+
 const STORE_KEY='lcy_workspace_v3';
 let state=loadState();
 let currentPage='home';
@@ -1278,7 +1290,10 @@ function renderClients(){
     const ci=(c.name||'A').charCodeAt(0)%avatarColors.length;
     const detailParts=[];
     if(c.gender&&c.gender!=='保密') detailParts.push(c.gender);
-    if(c.age) detailParts.push(c.age+'岁');
+    if(c.age){
+      const ageNum=calcAge(c.age);
+      if(ageNum!==null) detailParts.push(ageNum+'岁');
+    }
     if(c.job) detailParts.push(c.job);
     if(c.address) detailParts.push(c.address);
     let tagsHtml='<div class="client-tags-inline">';
@@ -1366,7 +1381,7 @@ function saveClient(){
   const data={
     id:editId||Date.now().toString(36)+Math.random().toString(36).slice(2,6),
     name,gender:document.getElementById('cGender').value,
-    age:document.getElementById('cAge').value?parseInt(document.getElementById('cAge').value):'',
+    age:document.getElementById('cAge').value||'',
     income:document.getElementById('cIncome').value.trim(),
     phone:document.getElementById('cPhone').value.trim(),
     wechat:document.getElementById('cWechat').value.trim(),
@@ -1401,7 +1416,14 @@ function openClientDetail(id){
   const ci=(c.name||'A').charCodeAt(0)%avatarColors.length;
   const rows=[];
   if(c.gender) rows.push(['性别',c.gender]);
-  if(c.age) rows.push(['年龄',c.age+'岁']);
+  if(c.age){
+    /* 出生日期格式化为中文显示，并计算年龄 */
+    const parts=String(c.age).split('-');
+    let dateStr=c.age;
+    if(parts.length===3){dateStr=parseInt(parts[1])+'月'+parseInt(parts[2])+'日';}
+    const ageNum=calcAge(c.age);
+    rows.push(['出生年月日',dateStr+(ageNum!==null?'（'+ageNum+'岁）':'')]);
+  }
   if(c.income) rows.push(['月收入',c.income]);
   if(c.phone) rows.push(['电话',c.phone]);
   if(c.wechat) rows.push(['微信',c.wechat]);
